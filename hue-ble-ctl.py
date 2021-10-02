@@ -74,6 +74,32 @@ class HueLight(gatt.Device):
         on = val[0] == 1
         self.light_state.write_value(b"\x00" if on else b"\x01")
 
+    def light_on(self) -> None:
+        val = self.light_state.read_value()
+        if val is None:
+            msg = (
+                "Could not read characteristic. If that is your first pairing"
+                "you may need to perform a firmware reset using the mobile phillips hue app and try connect again: "
+                "https://www.reddit.com/r/Hue/comments/eq0y3y/philips_hue_bluetooth_developer_documentation/"
+            )
+            print(msg, file=sys.stderr)
+            sys.exit(1)
+        on = val[0] == 1
+        self.light_state.write_value(b"\x01")
+
+    def light_off(self) -> None:
+        val = self.light_state.read_value()
+        if val is None:
+            msg = (
+                "Could not read characteristic. If that is your first pairing"
+                "you may need to perform a firmware reset using the mobile phillips hue app and try connect again: "
+                "https://www.reddit.com/r/Hue/comments/eq0y3y/philips_hue_bluetooth_developer_documentation/"
+            )
+            print(msg, file=sys.stderr)
+            sys.exit(1)
+        on = val[0] == 1
+        self.light_state.write_value(b"\x00")
+
     def services_resolved(self) -> None:
         super().services_resolved()
         for s in self.services:
@@ -89,6 +115,10 @@ class HueLight(gatt.Device):
                     self.color = char
         if self.action == "toggle":
             self.toggle_light()
+        elif self.action == "switch_on":
+            self.light_on()
+        elif self.action == "switch_off":
+            self.light_off()
         elif self.action == "introspect":
             self.introspect()
         elif self.action == "color":
@@ -101,13 +131,9 @@ class HueLight(gatt.Device):
         self.barrier.wait()
 
 
-# shannans_lamp = "cd:43:95:fe:ce:d6"
-# joergs_lamp = "d4:bb:d8:6c:07:86"
-
-
 def main():
     if len(sys.argv) < 3:
-        print(f"USAGE: {sys.argv[0]} toggle|brightness|introspect macaddress args...", file=sys.stderr)
+        print(f"USAGE: {sys.argv[0]} toggle|switch_on|switch_off|brightness|introspect macaddress args...", file=sys.stderr)
         sys.exit(1)
 
     mac_address = sys.argv[2]
