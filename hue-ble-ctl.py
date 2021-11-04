@@ -7,6 +7,13 @@ import struct
 from typing import List
 from threading import Thread, Barrier
 
+# API imports
+import flask
+
+app = flask.Flask(__name__)
+app.config["DEBUG"] = True
+
+
 LIGHT_CHARACTERISTIC = "932c32bd-0002-47a2-835a-a8d455b859dd"
 BRIGHTNESS_CHARACTERISTIC = "932c32bd-0003-47a2-835a-a8d455b859dd"
 COLOR_CHARACTERISTIC = "932c32bd-0004-47a2-835a-a8d455b859dd"
@@ -29,7 +36,11 @@ COLOR_CHARACTERISTIC = "932c32bd-0004-47a2-835a-a8d455b859dd"
 
 class HueLight(gatt.Device):
     def __init__(
-        self, action: str, extra_args: List[str], mac_address: str, manager: gatt.DeviceManager,
+        self,
+        action: str,
+        extra_args: List[str],
+        mac_address: str,
+        manager: gatt.DeviceManager,
         barrier: Barrier
     ) -> None:
         self.action = action
@@ -131,26 +142,43 @@ class HueLight(gatt.Device):
         self.barrier.wait()
 
 
-def main():
-    if len(sys.argv) < 3:
-        print(f"USAGE: {sys.argv[0]} toggle|switch_on|switch_off|brightness|introspect macaddress args...", file=sys.stderr)
-        sys.exit(1)
-
-    mac_address = sys.argv[2]
-    # FIXME adapter_name should be configurable
+@app.route('/api/v1/toggle', methods=['GET'])
+def home():
+    mac_address = flask.request.args.get("mac_address") 
     manager = gatt.DeviceManager(adapter_name="hci0")
-    # this is a bit of a hack. gatt blocks indefinitely
     b = Barrier(2)
-    device = HueLight(sys.argv[1], sys.argv[3:], mac_address=mac_address, manager=manager, barrier=b)
+    device = HueLight('toggle', [], mac_address=mac_address, manager=manager, barrier=b)
     def run():
         device.connect()
         manager.run()
     t = Thread(target=run, daemon=True)
     t.start()
     b.wait()
+    return "<h1>Done<h1>"
+
+app.run()
+
+
+# def main(param):
+#     if len(sys.argv) < 3:
+#         print(f"USAGE: {sys.argv[0]} toggle|switch_on|switch_off|brightness|introspect macaddress args...", file=sys.stderr)
+#         sys.exit(1)
+
+#     mac_address = sys.argv[2]
+#     # FIXME adapter_name should be configurable
+#     manager = gatt.DeviceManager(adapter_name="hci0")
+#     # this is a bit of a hack. gatt blocks indefinitely
+#     b = Barrier(2)
+#     device = HueLight(sys.argv[1], sys.argv[3:], mac_address=mac_address, manager=manager, barrier=b)
+#     def run():
+#         device.connect()
+#         manager.run()
+#     t = Thread(target=run, daemon=True)
+#     t.start()
+#     b.wait()
 
 
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
