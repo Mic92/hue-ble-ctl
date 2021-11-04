@@ -46,9 +46,12 @@ class HueLight(gatt.Device):
         self.action = action
         self.extra_args = extra_args
         self.barrier = barrier
-
+        print(manager)
+        print(barrier)
         print(f"connect to {mac_address}...")
         super(HueLight, self).__init__(mac_address=mac_address, manager=manager)
+
+    error = False;
 
     def introspect(self) -> None:
         for s in self.services:
@@ -138,9 +141,8 @@ class HueLight(gatt.Device):
             self.set_brightness(int(self.extra_args[0]))
         else:
             print(f"unknown action {self.action}")
-            sys.exit(1)
+            error = True
         self.barrier.wait()
-
 
 @app.route('/api/v1/toggle', methods=['GET'])
 def home():
@@ -154,9 +156,25 @@ def home():
     t = Thread(target=run, daemon=True)
     t.start()
     b.wait()
-    return "<h1>Done<h1>"
+    return '<h1>ok</h1>'
 
-app.run()
+@app.route('/api/v1/brightness/<int:value>', methods=['GET'])
+def home2(value):
+    mac_address = flask.request.args.get("mac_address")
+    print(value)
+    manager = gatt.DeviceManager(adapter_name="hci0")
+    b = Barrier(2)
+    device = HueLight('brightness', [value], mac_address=mac_address, manager=manager, barrier=b)
+    def run():
+        device.connect()
+        manager.run()
+    t = Thread(target=run, daemon=True)
+    t.start()
+    b.wait()
+    return '<h1>ok</h1>'
+
+
+app.run(host='0.0.0.0')
 
 
 # def main(param):
