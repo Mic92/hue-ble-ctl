@@ -35,22 +35,17 @@ COLOR_CHARACTERISTIC = "932c32bd-0004-47a2-835a-a8d455b859dd"
 
 
 class HueLight(gatt.Device):
-    brightness = 0
+    intBrightness = 0
     def __init__(
         self,
-        action: str,
-        extra_args: List[str],
         mac_address: str,
         manager: gatt.DeviceManager,
         barrier: Barrier
     ) -> None:
-        self.action = action
-        self.extra_args = extra_args
         self.barrier = barrier
-        print(manager)
-        print(barrier)
+        self.mac_address = mac_address
         print(f"connect to {mac_address}...")
-        super(HueLight, self).__init__(mac_address=mac_address, manager=manager)
+        super(HueLight, self).__init__(mac_address=self.mac_address, manager=manager)
 
     error = False;
 
@@ -68,13 +63,6 @@ class HueLight(gatt.Device):
                     except UnicodeDecodeError:
                         val = ary
                 print(f"  characteristic: {c.uuid}: {val}")
-
-    def get_brightness(self) -> None:
-        for s in self.services:
-            for c in s.characteristics:
-                val = c.read_value()
-                if (c.uuid == "932c32bd-0003-47a2-835a-a8d455b859dd"):
-                  self.brightness = int(val[0])
 
     def set_color(self) -> None:
         foo = self.color.write_value(struct.pack("i", 1000))
@@ -126,76 +114,59 @@ class HueLight(gatt.Device):
         super().services_resolved()
         for s in self.services:
             for char in s.characteristics:
+                val = char.read_value()
                 if char.uuid == LIGHT_CHARACTERISTIC:
                     print("found light characteristics")
                     self.light_state = char
                 elif char.uuid == BRIGHTNESS_CHARACTERISTIC:
-                    print("found brightness characteristics")
+                    print("found brightness characteristics : " + str(int(val[0])))
                     self.brightness = char
+                    self.intBrightness = int(val[0])
                 elif char.uuid == COLOR_CHARACTERISTIC:
                     print("found color characteristics")
                     self.color = char
-        if self.action == "toggle":
-            self.toggle_light()
-        elif self.action == "switch_on":
-            self.light_on()
-        elif self.action == "switch_off":
-            self.light_off()
-        elif self.action == "introspect":
-            self.introspect()
-        elif self.action == "color":
-            self.set_color()
-        elif self.action == "brightness":
-            self.set_brightness(int(self.extra_args[0]))
-        elif self.action == "getBrightness":
-            self.get_brightness()
-        else:
-            print(f"unknown action {self.action}")
-            error = True
         self.barrier.wait()
+
+    def set_mac_address(self, mac_address) -> None:
+        self.mac_address = mac_address
+
+    def set_action(self, action) -> None:
+        self.action = action
+
+manager = gatt.DeviceManager(adapter_name="hci0")
+b = Barrier(2)
+device = HueLight(mac_address="FD:4A:25:A6:62:80", manager=manager, barrier=b)
+def run():
+  device.connect()
+  manager.run()
+t = Thread(target=run, daemon=True)
+t.start()
+b.wait()
 
 @app.route('/api/v1/toggle', methods=['GET'])
 def home():
-    mac_address = flask.request.args.get("mac_address") 
-    manager = gatt.DeviceManager(adapter_name="hci0")
-    b = Barrier(2)
-    device = HueLight('toggle', [], mac_address=mac_address, manager=manager, barrier=b)
-    def run():
-        device.connect()
-        manager.run()
-    t = Thread(target=run, daemon=True)
-    t.start()
-    b.wait()
-    return '<h1>ok</h1>'
+    global device
+    if (not device.is_connected()):
+      print("Reconnecting")
+      device.connect()
+    device.toggle_light()
+    return ""
 
 @app.route('/api/v1/brightness/<int:value>', methods=['GET'])
 def home2(value):
-    mac_address = flask.request.args.get("mac_address")
-    print(value)
-    manager = gatt.DeviceManager(adapter_name="hci0")
-    b = Barrier(2)
-    device = HueLight('brightness', [value], mac_address=mac_address, manager=manager, barrier=b)
-    def run():
-        device.connect()
-        manager.run()
-    t = Thread(target=run, daemon=True)
-    t.start()
-    b.wait()
-    return '<h1>ok</h1>'
+    global device
+    if (not device.is_connected()):
+      print("Reconnecting")
+      device.connect()
+    device.set_brightness(value)
+    return ""
 
 @app.route('/api/v1/brightness', methods=['GET'])
 def home3():
-    mac_address = flask.request.args.get("mac_address")
-    manager = gatt.DeviceManager(adapter_name="hci0")
-    b = Barrier(2)
-    device = HueLight('getBrightness', [], mac_address=mac_address, manager=manager, barrier=b)
-    def run():
-        device.connect()
-        manager.run()
-    t = Thread(target=run, daemon=True)
-    t.start()
-    b.wait()
-    return str(device.brightness)
+    global device
+    if (not device.is_connected()):
+      device.connect()
+    return str(device.intBrightness)
 
 
 app.run(host='0.0.0.0')
