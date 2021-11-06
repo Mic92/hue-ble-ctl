@@ -35,6 +35,7 @@ COLOR_CHARACTERISTIC = "932c32bd-0004-47a2-835a-a8d455b859dd"
 
 
 class HueLight(gatt.Device):
+    brightness = 0
     def __init__(
         self,
         action: str,
@@ -67,6 +68,13 @@ class HueLight(gatt.Device):
                     except UnicodeDecodeError:
                         val = ary
                 print(f"  characteristic: {c.uuid}: {val}")
+
+    def get_brightness(self) -> None:
+        for s in self.services:
+            for c in s.characteristics:
+                val = c.read_value()
+                if (c.uuid == "932c32bd-0003-47a2-835a-a8d455b859dd"):
+                  self.brightness = int(val[0])
 
     def set_color(self) -> None:
         foo = self.color.write_value(struct.pack("i", 1000))
@@ -139,6 +147,8 @@ class HueLight(gatt.Device):
             self.set_color()
         elif self.action == "brightness":
             self.set_brightness(int(self.extra_args[0]))
+        elif self.action == "getBrightness":
+            self.get_brightness()
         else:
             print(f"unknown action {self.action}")
             error = True
@@ -172,6 +182,20 @@ def home2(value):
     t.start()
     b.wait()
     return '<h1>ok</h1>'
+
+@app.route('/api/v1/brightness', methods=['GET'])
+def home3():
+    mac_address = flask.request.args.get("mac_address")
+    manager = gatt.DeviceManager(adapter_name="hci0")
+    b = Barrier(2)
+    device = HueLight('getBrightness', [], mac_address=mac_address, manager=manager, barrier=b)
+    def run():
+        device.connect()
+        manager.run()
+    t = Thread(target=run, daemon=True)
+    t.start()
+    b.wait()
+    return str(device.brightness)
 
 
 app.run(host='0.0.0.0')
