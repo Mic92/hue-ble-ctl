@@ -1,5 +1,4 @@
 import sys
-import dbus
 import gatt
 import struct
 from threading import Barrier
@@ -7,6 +6,9 @@ from threading import Barrier
 LIGHT_CHARACTERISTIC = "932c32bd-0002-47a2-835a-a8d455b859dd"
 BRIGHTNESS_CHARACTERISTIC = "932c32bd-0003-47a2-835a-a8d455b859dd"
 COLOR_CHARACTERISTIC = "932c32bd-0004-47a2-835a-a8d455b859dd"
+PUBLIC_NAME = "97fe6561-0003-4f62-86e9-b71ee2da3d22"
+ZIGBEE_MODELS = "00002a24-0000-1000-8000-00805f9b34fb"
+FIRMWARE_VERSION = "00002a28-0000-1000-8000-00805f9b34fb"
 
 class HueLight(gatt.Device):
     def __init__(
@@ -22,6 +24,10 @@ class HueLight(gatt.Device):
 
     error = False;
 
+    ###
+    # Method that print all light characteristics
+    # (Color, Brightness level ... etc)
+    ###
     def introspect(self) -> None:
         for s in self.services:
             print(f"service: {s.uuid}")
@@ -35,6 +41,18 @@ class HueLight(gatt.Device):
                         val = ary.decode("utf-8")
                     except UnicodeDecodeError:
                         val = ary
+                if (c.uuid == LIGHT_CHARACTERISTIC):
+                  c.uuid = "LIGHT_CHARACTERISTIC"
+                elif (c.uuid == BRIGHTNESS_CHARACTERISTIC):
+                  c.uuid = "BRIGHTNESS_CHARACTERISTIC"
+                elif (c.uuid == COLOR_CHARACTERISTIC):
+                  c.uuid = "COLOR_CHARACTERISTIC"
+                elif (c.uuid == PUBLIC_NAME):
+                  c.uuid = "PUBLIC_NAME"
+                elif (c.uuid == ZIGBEE_MODELS):
+                  c.uuid = "ZIGBEE_MODELS"
+                elif (c.uuid == FIRMWARE_VERSION):
+                  c.uuid = "FIRMWARE_VERSION"
                 print(f"  characteristic: {c.uuid}: {val}")
 
     def set_color(self) -> None:
@@ -47,10 +65,7 @@ class HueLight(gatt.Device):
         next_brightness = self.getBrightness() + val
         if (next_brightness > 254) : next_brightness = 254
         elif (next_brightness < 1) : next_brightness = 1
-        
         self.brightness.write_value(struct.pack("B", next_brightness ))
-
-
 
     def toggle_light(self) -> None:
         val = self.light_state.read_value()
@@ -112,6 +127,3 @@ class HueLight(gatt.Device):
 
     def set_mac_address(self, mac_address) -> None:
         self.mac_address = mac_address
-
-    def set_action(self, action) -> None:
-        self.action = action
