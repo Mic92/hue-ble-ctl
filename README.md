@@ -138,7 +138,10 @@ I didn't tested with more than one device. Tell me if there is any problem.
 
 ## Todo :
 
-[ ] Handle errors with [http response code](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes)
-[ ] Add tests
-[ ] Add Swagger documentation
-[ ] Change Set routes to POST instead of GET
+- [ ] Handle errors with [http response code](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes)
+
+- [ ] Add tests
+
+- [ ] Add Swagger documentation
+
+- [ ] Change Set routes to POST instead of GET
