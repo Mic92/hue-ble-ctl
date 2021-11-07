@@ -1,0 +1,1 @@
+API_START_URI: str = "/api/v1/"
