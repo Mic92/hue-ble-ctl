@@ -1,0 +1,47 @@
+[
+  {
+    "id": "job1",
+    "func": "job1",
+    "trigger": "cron",
+    "args":["one", "two"],
+    "hour":22,
+    "minute":55,
+    "second": 30
+  },
+  {
+    "id": "job2",
+    "func": "job1",
+    "trigger": "cron",
+    "args":["blbl", "two"],
+    "hour":22,
+    "minute":55,
+    "second": 40
+  },
+  {
+    "id": "job3",
+    "func": "job1",
+    "trigger": "cron",
+    "args":["one", "tth"],
+    "hour":22,
+    "minute":55,
+    "second": 41
+  },
+  {
+    "id": "job4",
+    "func": "job1",
+    "trigger": "cron",
+    "args":["htht", "two"],
+    "hour":22,
+    "minute":55,
+    "second": 42
+  },
+  {
+    "id": "job5",
+    "func": "job1",
+    "trigger": "cron",
+    "args":["one", "two"],
+    "hour":22,
+    "minute":55,
+    "second": 45
+  }
+]
