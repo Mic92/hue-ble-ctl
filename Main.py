@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from os import times
 import dbus
 import gatt
 from typing import Dict, List
@@ -15,6 +16,8 @@ from HueLight import HueLight
 import json
 with open('./jobs.json') as f:
   jobs = json.load(f)
+
+devices = dict()
 
 def job1(var_one, var_two):
       print(str(var_one) + " " + str(var_two))
@@ -46,7 +49,7 @@ if __name__ == '__main__':
       JOBS = list(map(jobJsonToObj , jobs))
 
 
-  devices = dict()
+
   # device = HueLight(mac_address="FD:4A:25:A6:62:80", manager=manager, barrier=b)
 
   for device_def in DEVICES_DEFINITION:
@@ -69,10 +72,10 @@ if __name__ == '__main__':
   scheduler.start()
 
   # scheduler.add_job(id="job1", func=job1, args=['one', 'two'], trigger="cron", hour=21, minute=26, second=1)
-  configureRoutes(app, devices)
+  configureRoutes(app, devices, scheduler)
 
   app.run(
     debug=True,
     host='0.0.0.0',
-    use_reloader=False
+    use_reloader=True
   )
