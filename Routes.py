@@ -1,11 +1,11 @@
-import time
 from typing import List
 from Tools import check_connection
-from HueDevice import HueLight
-from threading import Thread, Barrier
+from threading import Thread
 from flask import request
 from flask_apscheduler import APScheduler
 import flask
+from Tools import light_on_bulb_at, light_on_bulb_every_day_at, valide_time, toggle_light_every, save_job
+
 
 # Const
 from Config import API_START_URI
@@ -37,7 +37,7 @@ def configureRoutes(app: flask.Flask, devices: dict, scheduler: APScheduler):
           }
 
     @app.route(API_START_URI + 'brightness/<int:value>', methods=['GET'])
-    def setBrightness(value):
+    def set_brightness(value):
         device_name = request.args.get('device_name')
         if (device_name):
           device = devices.get(device_name)
@@ -59,7 +59,7 @@ def configureRoutes(app: flask.Flask, devices: dict, scheduler: APScheduler):
           }
 
     @app.route(API_START_URI + 'brightness/vary/<string:value>', methods=['GET'])
-    def varyBrightness(value):
+    def vary_brightness(value):
         device_name = request.args.get('device_name')
         if (device_name):
           device = devices.get(device_name)
@@ -80,12 +80,14 @@ def configureRoutes(app: flask.Flask, devices: dict, scheduler: APScheduler):
           }
 
     @app.route(API_START_URI + 'brightness', methods=['GET'])
-    def getBrightness():
+    def get_brightness():
         device_name = request.args.get('device_name')
         if (device_name):
           device = devices.get(device_name)
           if (device != None):
-            return str(device.getBrightness())
+            return {
+              "message": str(device.connection.getBrightness())
+            }
           else:
             return {
               "error": DEVICE_NOT_KNOWN
@@ -96,49 +98,38 @@ def configureRoutes(app: flask.Flask, devices: dict, scheduler: APScheduler):
           }
 
     @app.route(API_START_URI + 'active', methods=['GET'])
-    def getActiveState():
-        device_name = request.args.get('device_name')
-        if (device_name):
-          device = devices.get(device_name)
-          if (device != None):
-            return str(device.is_connected())
-          else:
-            return {
-              "error": DEVICE_NOT_KNOWN
-            }
+    def get_active_state():
+      device_name = request.args.get('device_name')
+      if (device_name):
+        device = devices.get(device_name)
+        if (device != None):
+          return str(device.connection.is_connected())
         else:
           return {
-            "error": NEED_TO_SPECIFY_DEVICE_NAME
+            "error": DEVICE_NOT_KNOWN
           }
-
-    def light_on_bulb_at(device: HueLight, hour: int , minute: int , seconde: int) -> bool:
-      scheduler.add_job(id="blblbl", func=device.toggle_light, trigger="cron", args=[], hour=hour, minute=minute, second=seconde)
+      else:
+        return {
+          "error": NEED_TO_SPECIFY_DEVICE_NAME
+        }
 
     @app.route(API_START_URI + 'light_on_at', methods=['GET'])
-    def lightOnAt():
+    def light_on_at():
       device_name = request.args.get('device_name') and str(request.args.get('device_name'))
       hour = request.args.get('hour') and int(request.args.get('hour'))
       minute = request.args.get('minute') and int(request.args.get('minute'))
-      seconde = request.args.get('seconde') and int(request.args.get('seconde'))
+      second = request.args.get('second') and int(request.args.get('second'))
       if(device_name):
-        if(hour
-        and minute
-        and seconde
-        and hour >= 0
-        and hour <= 23
-        and minute >= 0
-        and minute <= 59
-        and seconde >= 0
-        and seconde <= 59):
+        if(valide_time(hour, minute, second)):
           device = devices.get(device_name)
           if (device != None):
-            light_on_bulb_at(device.connection, hour, minute, seconde)
+            light_on_bulb_at(device.connection, scheduler, hour, minute, second)
             return {
               "message": DEVICE_SCHEDULE_OK,
               "device_name": device_name,
               "hour": hour,
               "minute": minute,
-              "seconde": seconde,
+              "second": second,
             }
           else:
             return {
@@ -146,8 +137,68 @@ def configureRoutes(app: flask.Flask, devices: dict, scheduler: APScheduler):
             }
         else:
           return {
-              "error": INVALID_HOUR
+              "error": INVALID_HOUR,
+              "hour": hour,
+              "minute": minute,
+              "second": second,
             }
+      else:
+        return {
+          "error": NEED_TO_SPECIFY_DEVICE_NAME
+        }
+
+    @app.route(API_START_URI + 'light_on_every_day_at', methods=['GET'])
+    def light_on_every_day_at():
+      device_name = request.args.get('device_name') and str(request.args.get('device_name'))
+      hour = request.args.get('hour') and int(request.args.get('hour'))
+      minute = request.args.get('minute') and int(request.args.get('minute'))
+      second = request.args.get('second') and int(request.args.get('second'))
+      if(device_name):
+        if(valide_time(hour, minute, second)):
+          device = devices.get(device_name)
+          if (device != None):
+            light_on_bulb_every_day_at(device.connection, scheduler, hour, minute, second)
+            return {
+              "message": DEVICE_SCHEDULE_OK,
+              "device_name": device_name,
+              "hour": hour,
+              "minute": minute,
+              "second": second,
+            }
+          else:
+            return {
+              "error": DEVICE_NOT_KNOWN
+            }
+        else:
+          return {
+              "error": INVALID_HOUR,
+              "hour": hour,
+              "minute": minute,
+              "second": second
+            }
+      else:
+        return {
+          "error": NEED_TO_SPECIFY_DEVICE_NAME
+        }
+
+    @app.route(API_START_URI + 'light_on_every', methods=['GET'])
+    def light_on_every():
+      device_name = request.args.get('device_name') and str(request.args.get('device_name'))
+      second = request.args.get('second') and int(request.args.get('second'))
+      if(device_name):
+        device = devices.get(device_name)
+        if (device != None):
+          toggle_light_every(device, scheduler, second)
+          save_job(id=f"light_on_every_{second}_seconds", func="light_on_every", trigger="interval", device_name=device.name, second=1)
+          return {
+            "message": DEVICE_SCHEDULE_OK,
+            "device_name": device_name,
+            "second": second,
+          }
+        else:
+          return {
+            "error": DEVICE_NOT_KNOWN
+          }
       else:
         return {
           "error": NEED_TO_SPECIFY_DEVICE_NAME

@@ -68,6 +68,7 @@ class HueLight(gatt.Device):
         self.brightness.write_value(struct.pack("B", next_brightness ))
 
     def toggle_light(self) -> None:
+      if (hasattr(self, "light_state")):
         val = self.light_state.read_value()
         if val is None:
             msg = (

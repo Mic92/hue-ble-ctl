@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 from os import times
-import dbus
-import gatt
 from typing import Dict, List
 from threading import Thread, Barrier
 from Routes import configureRoutes
 from Config import DEVICES_DEFINITION
 from HueDevice import HueDevice
+from Tools import jobJsonToObj, toggle_light_every
 from flask_apscheduler import APScheduler
 import flask
 
@@ -19,39 +18,11 @@ with open('./jobs.json') as f:
 
 devices = dict()
 
-def job1(var_one, var_two):
-      print(str(var_one) + " " + str(var_two))
-
-def job2(var_one, var_two):
-      print(str(var_one) + " " + str(var_two))
-
-def jobJsonToObj(job):
-  jobFunc = None
-  if (job["func"] == "job1"):
-    jobFunc = job1
-  else:
-    jobFunc = job2
-  return {
-    "id": job["id"],
-    "func": jobFunc,
-    "trigger": job["trigger"],
-    "args": job["args"],
-    "hour": job["hour"],
-    "minute": job["minute"],
-    "second": job["second"]
-  }
+class Config:
+    SCHEDULER_API_ENABLED = True
+    SCHEDULER_TIMEZONE = "Europe/Paris"
 
 if __name__ == '__main__':
-  # Set configuration values
-  class Config:
-      SCHEDULER_API_ENABLED = True
-      SCHEDULER_TIMEZONE = "Europe/Paris"
-      JOBS = list(map(jobJsonToObj , jobs))
-
-
-
-  # device = HueLight(mac_address="FD:4A:25:A6:62:80", manager=manager, barrier=b)
-
   for device_def in DEVICES_DEFINITION:
     device = HueDevice(device_def["name"], device_def["mac_address"])
     def run():
@@ -61,19 +32,23 @@ if __name__ == '__main__':
       device.manager.run()
     t = Thread(target=run, daemon=True)
     t.start()
-    device.barrier.wait()
+    # device.barrier.wait()
 
 
   app = flask.Flask(__name__)
-  app.config.from_object(Config())
   # initialize scheduler
   scheduler = APScheduler()
   scheduler.init_app(app)
   scheduler.start()
+  # Set configuration values
+  decodedJobs = []
+  for job in jobs:
+    tempJob = jobJsonToObj(job, scheduler, devices)
+    tempJob and toggle_light_every(tempJob["device"], tempJob["scheduler"], tempJob["second"])
+  print(decodedJobs)
 
-  # scheduler.add_job(id="job1", func=job1, args=['one', 'two'], trigger="cron", hour=21, minute=26, second=1)
   configureRoutes(app, devices, scheduler)
-
+  app.config.from_object(Config())
   app.run(
     debug=True,
     host='0.0.0.0',
