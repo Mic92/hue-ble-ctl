@@ -4,9 +4,12 @@ from HueDevice import HueDevice
 import datetime
 import json
 from random import random
+from Config import DEVICES_DEFINITION
+from threading import Thread
+from HueDevice import HueDevice
 from flask_apscheduler import APScheduler
 
-# Bluetooth methods
+#### Bluetooth methods
 
 ###
 # Check connection, and try to reconnect if disconnected
@@ -16,7 +19,22 @@ def check_connection(device: HueLight) -> None:
       print("Reconnecting")
       device.connect()
 
-# JSON Methods
+def get_initialized_devices():
+  devices = dict()
+  for device_def in DEVICES_DEFINITION:
+    device = HueDevice(device_def["name"], device_def["mac_address"])
+    def run():
+      device.open_connection()
+      devices[device_def["name"]] = device
+      device.connection.connect()
+      device.manager.run()
+    t = Thread(target=run, daemon=True)
+    t.start()
+    # device.barrier.wait()
+  return devices
+
+#### JSON Methods
+
 ###
 # Get all jobs from jobs.json
 ###
@@ -91,7 +109,14 @@ def jobJsonToJob(job, scheduler, devices):
   return None
 
 
-# Schedule methods
+#### Schedule methods
+
+def initialize_scheduler(app):
+  scheduler = APScheduler()
+  scheduler.init_app(app)
+  scheduler.start()
+  return scheduler
+
 ###
 # Schedule light on at a given time
 ###
@@ -129,7 +154,8 @@ def toggle_light_every(device: HueDevice, scheduler: APScheduler, second: int) -
     seconds=second
   )
 
-# Time methods
+#### Time methods
+
 ###
 # Return true if the given time is valid
 ###

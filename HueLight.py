@@ -22,8 +22,6 @@ class HueLight(gatt.Device):
         print(f"connect to {mac_address}...")
         super(HueLight, self).__init__(mac_address=self.mac_address, manager=manager)
 
-    error = False;
-
     ###
     # Method that print all light characteristics
     # (Color, Brightness level ... etc)

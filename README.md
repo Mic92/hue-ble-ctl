@@ -231,10 +231,14 @@ I didn't tested with more than one device. Tell me if there is any problem.
 
 ## Todo :
 
-- [ ] Handle errors with [http response code](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes)
-
 - [ ] Add tests
+
+- [ ] Handle errors with [http response code](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes)
 
 - [ ] Add Swagger documentation
 
 - [ ] Change Set routes to POST instead of GET
+
+- [ ] Add route to search new devices
+
+- [ ] Add route to add new devices with mac address

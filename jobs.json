@@ -1,1 +1,1 @@
-[{"id": "light_on_bulb_every_day_at_0:54:30_on_device_MainLight", "func": "light_on_every_day_at", "trigger": "cron", "device_name": "MainLight", "hour": 0, "minute": 54, "second": 30}]
+[]
