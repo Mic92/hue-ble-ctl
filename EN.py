@@ -1,0 +1,6 @@
+DEVICE_NOT_KNOWN = "Device name not known"
+NEED_TO_SPECIFY_DEVICE_NAME = "You need to specify device name : ?device_name=..."
+INVALID_HOUR = "Provided time is invalid"
+DEVICE_SCHEDULE_OK = "Device schedule was setup"
+NEED_TO_SPECIFY_JOB_ID = "You need to specidy Job id you want to get removed"
+DELETE_SCHEDULE_OK = "Schedule was deleted"

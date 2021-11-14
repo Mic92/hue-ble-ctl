@@ -5,7 +5,7 @@ from threading import Thread, Barrier
 from Routes import configureRoutes
 from Config import DEVICES_DEFINITION
 from HueDevice import HueDevice
-from Tools import jobJsonToObj, toggle_light_every
+from Tools import jobJsonToJob, toggle_light_every
 from flask_apscheduler import APScheduler
 import flask
 
@@ -17,10 +17,6 @@ with open('./jobs.json') as f:
   jobs = json.load(f)
 
 devices = dict()
-
-class Config:
-    SCHEDULER_API_ENABLED = True
-    SCHEDULER_TIMEZONE = "Europe/Paris"
 
 if __name__ == '__main__':
   for device_def in DEVICES_DEFINITION:
@@ -36,19 +32,27 @@ if __name__ == '__main__':
 
 
   app = flask.Flask(__name__)
+
+  #Config Timezone
+  class Config:
+    SCHEDULER_API_ENABLED = False
+    SCHEDULER_TIMEZONE = "Europe/Paris"
+
+  app.config.from_object(Config())
+
   # initialize scheduler
   scheduler = APScheduler()
   scheduler.init_app(app)
   scheduler.start()
-  # Set configuration values
+
+
+  # Add saved jobs
   decodedJobs = []
   for job in jobs:
-    tempJob = jobJsonToObj(job, scheduler, devices)
-    tempJob and toggle_light_every(tempJob["device"], tempJob["scheduler"], tempJob["second"])
-  print(decodedJobs)
+    jobJsonToJob(job, scheduler, devices)
 
   configureRoutes(app, devices, scheduler)
-  app.config.from_object(Config())
+
   app.run(
     debug=True,
     host='0.0.0.0',

@@ -1,0 +1,6 @@
+DEVICE_NOT_KNOWN = "Nom d'appareil inconnue"
+NEED_TO_SPECIFY_DEVICE_NAME = "Vous devez spécidier un nom d'appareil : ?device_name=..."
+INVALID_HOUR = "L'heure fournie n'est pas valide"
+DEVICE_SCHEDULE_OK = "La programmation a bien été configurée"
+NEED_TO_SPECIFY_JOB_ID = "Vous devez spécifier l'identifiant du Job que vous voulez supprimer"
+DELETE_SCHEDULE_OK = "La programmation a bien été supprimée"

@@ -131,6 +131,99 @@ python3 Main.py
 
    `device_name=[string]`
 
+**Schedule light on**
+----
+  Schedule light on at a given time
+
+* **URL**
+  /api/v1/light_on_at
+
+* **Method:**
+
+  `GET`
+
+*  **URL Params**
+
+   **Required:**
+
+   `device_name=[string]`
+   `hour=[int]`
+   `minute=[int]`
+   `second=[int]`
+
+**Schedule light on every day at**
+----
+  Schedule light on every day at a given time
+
+* **URL**
+  /api/v1/light_on_every_day_at
+
+* **Method:**
+
+  `GET`
+
+*  **URL Params**
+
+   **Required:**
+
+   `device_name=[string]`
+   `hour=[int]`
+   `minute=[int]`
+   `second=[int]`
+
+**Schedule light on every day at**
+----
+  Schedule toggle light every x seconds
+
+* **URL**
+  /api/v1/light_on_every_day_at
+
+* **Method:**
+
+  `GET`
+
+*  **URL Params**
+
+   **Required:**
+
+   `device_name=[string]`
+   `second=[int]`
+
+**Get jobs**
+----
+  Return a list of all saved jobs
+
+* **URL**
+  /api/v1/jobs
+
+* **Method:**
+
+  `GET`
+
+*  **URL Params**
+
+   **Optional:**
+
+   `device_name=[string]`
+
+
+**Get jobs**
+----
+  Delete a job from ID
+
+* **URL**
+  /api/v1/jobs
+
+* **Method:**
+
+  `DELETE`
+
+*  **URL Params**
+
+   **Required:**
+
+   `device_name=[string]`
+
 ## Note :
 My device is this one : [LWA009](https://zigbee.blakadder.com/Philips_LWA009.html)
 It has no color so i didn't implemented this.
