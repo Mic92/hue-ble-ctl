@@ -9,7 +9,7 @@ from threading import Thread, Barrier
 
 LIGHT_CHARACTERISTIC = "932c32bd-0002-47a2-835a-a8d455b859dd"
 BRIGHTNESS_CHARACTERISTIC = "932c32bd-0003-47a2-835a-a8d455b859dd"
-COLOR_CHARACTERISTIC = "932c32bd-0004-47a2-835a-a8d455b859dd"
+TEMPERATURE_CHARACTERISTIC = "932c32bd-0004-47a2-835a-a8d455b859dd"
 
 
 
@@ -54,8 +54,10 @@ class HueLight(gatt.Device):
                         val = ary
                 print(f"  characteristic: {c.uuid}: {val}")
 
-    def set_color(self) -> None:
-        foo = self.color.write_value(struct.pack("i", 1000))
+    def set_temperature(self, val: int) -> None:
+        val = max(153, min(val, 454))
+        self.temperature.write_value(struct.pack("h", val))
+        print(self.temperature.read_value())
 
     def set_brightness(self, val: int) -> None:
         self.brightness.write_value(struct.pack("B", val))
@@ -110,9 +112,9 @@ class HueLight(gatt.Device):
                 elif char.uuid == BRIGHTNESS_CHARACTERISTIC:
                     print("found brightness characteristics")
                     self.brightness = char
-                elif char.uuid == COLOR_CHARACTERISTIC:
-                    print("found color characteristics")
-                    self.color = char
+                elif char.uuid == TEMPERATURE_CHARACTERISTIC:
+                    print("found temperature characteristics")
+                    self.temperature = char
         if self.action == "toggle":
             self.toggle_light()
         elif self.action == "switch_on":
@@ -121,8 +123,8 @@ class HueLight(gatt.Device):
             self.light_off()
         elif self.action == "introspect":
             self.introspect()
-        elif self.action == "color":
-            self.set_color()
+        elif self.action == "temperature":
+            self.set_temperature(int(self.extra_args[0]))
         elif self.action == "brightness":
             self.set_brightness(int(self.extra_args[0]))
         else:
@@ -133,7 +135,7 @@ class HueLight(gatt.Device):
 
 def main():
     if len(sys.argv) < 3:
-        print(f"USAGE: {sys.argv[0]} toggle|switch_on|switch_off|brightness|introspect macaddress args...", file=sys.stderr)
+        print(f"USAGE: {sys.argv[0]} toggle|switch_on|switch_off|brightness|temperature|introspect macaddress args...", file=sys.stderr)
         sys.exit(1)
 
     mac_address = sys.argv[2]
